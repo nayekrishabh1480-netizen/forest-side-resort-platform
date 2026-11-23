@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { safeExternalUrl } from './api';
+import { resolveApiBase, safeExternalUrl } from './api';
+
+describe('resolveApiBase', () => {
+  it('adds the versioned API prefix to a Render service origin', () => {
+    expect(resolveApiBase('https://forest-api.onrender.com')).toBe('https://forest-api.onrender.com/api/v1');
+  });
+
+  it('preserves a complete versioned base URL', () => {
+    expect(resolveApiBase('https://forest-api.onrender.com/api/v1/')).toBe('https://forest-api.onrender.com/api/v1');
+  });
+
+  it('uses the local API default when no value is supplied', () => {
+    expect(resolveApiBase()).toBe('http://localhost:4000/api/v1');
+  });
+});
 
 describe('safeExternalUrl', () => {
   const fallback = 'https://maps.google.com/?q=Guptkashi';

@@ -56,7 +56,7 @@ Set these in Render's service environment settings. Do not commit their values.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`, `OWNER_NOTIFICATION_EMAIL` | Optional | Email notifications; configure only after SMTP is approved and available |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`, `WHATSAPP_TEMPLATE_BOOKING_ACK`, `WHATSAPP_TEMPLATE_BOOKING_STATUS`, `WHATSAPP_TEMPLATE_PREARRIVAL` | Optional | WhatsApp Business Cloud API; use approved templates and guest opt-in |
 
-For the frontend, `VITE_API_BASE_URL` is public build-time configuration and must point at the API origin with `/api/v1`. Do not place secrets in any `VITE_` variable.
+For the frontend, `VITE_API_BASE_URL` is public build-time configuration and accepts the API origin or a full base URL. The frontend adds `/api/v1` when it is missing. Do not place secrets in any `VITE_` variable.
 
 This codebase does **not** use `FRONTEND_URL`, `SESSION_SECRET`, or `WEATHER_API_KEY`: CORS uses `APP_ORIGINS`; admin sessions use random tokens stored hashed in PostgreSQL; the Open-Meteo weather provider does not require an API key. Avoid setting unused variables as if they enabled functionality.
 

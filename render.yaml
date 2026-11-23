@@ -20,7 +20,10 @@ services:
           name: forest-side-resort-nayek-staging-db
           property: connectionString
       - key: APP_ORIGINS
-        value: https://forest-side-resort-nayek-staging.onrender.com
+        fromService:
+          name: forest-side-resort-nayek-staging
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: WEATHER_LOCATION_NAME
@@ -38,7 +41,10 @@ services:
     autoDeployTrigger: off
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://forest-side-resort-nayek-staging-api.onrender.com/api/v1
+        fromService:
+          name: forest-side-resort-nayek-staging-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
     routes:
       - type: rewrite
         source: /*

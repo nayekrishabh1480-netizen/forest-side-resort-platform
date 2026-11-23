@@ -1,4 +1,9 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
+export function resolveApiBase(value?: string): string {
+  const base = (value || 'http://localhost:4000/api/v1').replace(/\/+$/, '');
+  return base.endsWith('/api/v1') ? base : `${base}/api/v1`;
+}
+
+const API_BASE = resolveApiBase(import.meta.env.VITE_API_BASE_URL);
 
 export class ApiError extends Error {
   code: string;
