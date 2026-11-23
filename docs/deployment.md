@@ -2,9 +2,11 @@
 
 ## Current deployment status
 
-The application is a monorepo: the Vite/React frontend is at the repository root (`src/`, `index.html`, `vite.config.ts`) and the Express API is in `apps/api/`. There are no separate `frontend/` and `backend/` folders, and there is no Render configuration/API connection in the current workspace.
+The application is a monorepo: the Vite/React frontend is at the repository root (`src/`, `index.html`, `vite.config.ts`) and the Express API is in `apps/api/`. There are no separate `frontend/` and `backend/` folders. A Render Blueprint is provided at [render.yaml](../render.yaml) for a free staging environment; it does not define production resources.
 
-The previous production QA assessment is **not approved for release** until PostgreSQL integration and the missing browser workflows are completed. Do not connect automatic production deployment or run production migrations until those checks pass. Current verified builds/tests and limitations are in [the QA report](qa-security-audit.md).
+The production QA assessment is **not approved for release** until PostgreSQL integration and browser workflows are completed. Do not connect automatic production deployment or run production migrations until those checks pass. Current verified builds/tests and limitations are in [the QA report](qa-security-audit.md).
+
+The staging Blueprint uses free Render services, disables automatic deploys, and uses only synthetic records. Free Render Postgres is temporary and expires after 30 days, so this environment is for QA and must not hold real guest data. The staging API runs Prisma migrations at startup because Render pre-deploy commands are unavailable on free web services. Production should use a paid plan with a pre-deploy migration command, backups, and the owner-approved environment values.
 
 ## Render resources
 
