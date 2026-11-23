@@ -6,6 +6,7 @@ import './styles.css';
 import './brand-fonts.css';
 import './home-design.css';
 import './media.css';
+import './booking.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><BrowserRouter><App /></BrowserRouter></React.StrictMode>,

@@ -11,7 +11,7 @@ import type { createWeatherService } from '../services/weather.js';
 import type { createNotificationService } from '../services/notifications.js';
 
 const dateText = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => { try { parseDateOnly(value); return true; } catch { return false; } }, 'Invalid calendar date');
-const contactSchema = z.object({ name: z.string().trim().min(2).max(180), phone: z.string().trim().min(7).max(40), email: z.string().trim().email().max(320).optional().or(z.literal('')) });
+const contactSchema = z.object({ name: z.string().trim().min(2).max(180), phone: z.string().trim().min(7).max(40).refine((value) => /^\+?[0-9\s().-]+$/.test(value) && (value.match(/\d/g)?.length ?? 0) >= 7, 'Enter a valid phone number'), email: z.string().trim().email().max(320).optional().or(z.literal('')) });
 const bookingSchema = contactSchema.extend({
   checkIn: dateText,
   checkOut: dateText,
@@ -135,10 +135,20 @@ export function publicRouter({ prisma, weather, notifications, sensitiveLimiter 
       await tx.bookingGuest.create({ data: { bookingId: created.id, guestId: guest.id, role: 'LEAD' } });
       return created;
     });
+    const notifySafely = async (channel: 'owner' | 'email' | 'whatsapp', send: () => Promise<{ sent: boolean }>) => {
+      try {
+        const result = await send();
+        return { sent: result.sent };
+      } catch {
+        console.error(JSON.stringify({ requestId: req.requestId, code: 'BOOKING_NOTIFICATION_FAILED', channel }));
+        return { sent: false };
+      }
+    };
     let emailNotification: { sent: boolean; reason?: string } | undefined;
-    if (input.email) emailNotification = await notifications.sendBookingAcknowledgement({ to: input.email, reference, guestId: booking.guestId, bookingId: booking.id, optedIn: true });
-    const whatsappNotification = input.whatsappOptIn ? await notifications.sendWhatsAppTemplate({ to: input.phone, templateName: config.WHATSAPP_TEMPLATE_BOOKING_ACK, bodyParameters: [reference], guestId: booking.guestId, bookingId: booking.id, optedIn: true, type: 'BOOKING_REQUEST_ACK' }) : undefined;
-    const ownerNotification = await notifications.sendOwnerBookingNotification({ reference, guestName: input.name, phone: input.phone, checkIn: input.checkIn, checkOut: input.checkOut, guests: input.guests, guestId: booking.guestId, bookingId: booking.id });
+    const guestEmail = input.email;
+    if (guestEmail) emailNotification = await notifySafely('email', () => notifications.sendBookingAcknowledgement({ to: guestEmail, reference, guestId: booking.guestId, bookingId: booking.id, optedIn: true }));
+    const whatsappNotification = input.whatsappOptIn ? await notifySafely('whatsapp', () => notifications.sendWhatsAppTemplate({ to: input.phone, templateName: config.WHATSAPP_TEMPLATE_BOOKING_ACK, bodyParameters: [reference], guestId: booking.guestId, bookingId: booking.id, optedIn: true, type: 'BOOKING_REQUEST_ACK' })) : undefined;
+    const ownerNotification = await notifySafely('owner', () => notifications.sendOwnerBookingNotification({ reference, guestName: input.name, phone: input.phone, checkIn: input.checkIn, checkOut: input.checkOut, guests: input.guests, guestId: booking.guestId, bookingId: booking.id }));
     res.status(201).json({ data: { reference: booking.reference, status: booking.status, submittedAt: booking.createdAt.toISOString(), confirmation: 'This is a booking request. A reservation is created only after the resort reviews availability and confirms it.', ...(emailNotification ? { emailNotification } : {}), ...(whatsappNotification ? { whatsappNotification } : {}), ownerNotification } });
   }));
 

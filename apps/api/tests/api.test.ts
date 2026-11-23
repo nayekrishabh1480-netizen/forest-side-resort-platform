@@ -94,12 +94,48 @@ describe('Forest Side API', () => {
     expect(prisma.bookingGuest.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ role: 'LEAD' }) }));
   });
 
+  it('returns the created booking request when owner notification delivery throws', async () => {
+    const prisma = mockPrisma();
+    const { app, notifications } = appWith(prisma);
+    notifications.sendOwnerBookingNotification.mockRejectedValue(new Error('synthetic private provider detail'));
+
+    const response = await request(app).post('/api/v1/booking-requests').send({ name: 'Synthetic Traveller', phone: '+911234567890', email: '', ...futureDates, guests: 2 });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.status).toBe('REQUESTED');
+    expect(response.body.data.reference).toMatch(/^FSR-/);
+    expect(response.body.data.ownerNotification).toEqual({ sent: false });
+    expect(response.text).not.toContain('synthetic private provider detail');
+  });
+
   it('rejects invalid booking dates before touching storage', async () => {
     const prisma = mockPrisma();
     const { app } = appWith(prisma);
     const response = await request(app).post('/api/v1/booking-requests').send({ name: 'Synthetic Traveller', phone: '+911234567890', ...futureDates, checkOut: '2027-01-02', guests: 2 });
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('INVALID_STAY_DATES');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed booking phone numbers before touching storage', async () => {
+    const prisma = mockPrisma();
+    const { app } = appWith(prisma);
+    const response = await request(app).post('/api/v1/booking-requests').send({ name: 'Synthetic Traveller', phone: 'abcdefghi', email: '', ...futureDates, guests: 2 });
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid booking email and guest count before touching storage', async () => {
+    const prisma = mockPrisma();
+    const { app } = appWith(prisma);
+    const invalidEmail = await request(app).post('/api/v1/booking-requests').send({ name: 'Synthetic Traveller', phone: '+911234567890', email: 'not-an-email', ...futureDates, guests: 2 });
+    const invalidGuestCount = await request(app).post('/api/v1/booking-requests').send({ name: 'Synthetic Traveller', phone: '+911234567890', email: '', ...futureDates, guests: 21 });
+
+    expect(invalidEmail.status).toBe(400);
+    expect(invalidEmail.body.error.code).toBe('VALIDATION_ERROR');
+    expect(invalidGuestCount.status).toBe(400);
+    expect(invalidGuestCount.body.error.code).toBe('VALIDATION_ERROR');
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 

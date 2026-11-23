@@ -1,0 +1,52 @@
+.booking-request-form{width:100%;max-width:760px;justify-self:start;background:var(--home-paper,#fbfaf6);border:1px solid #e6e3d9;box-shadow:0 18px 48px #172c2410}
+.booking-dates-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+.booking-request-form .field input:focus,.booking-request-form .field select:focus,.booking-request-form .field textarea:focus{outline:2px solid #718d78;outline-offset:2px}
+.booking-availability-note{margin-top:18px;padding:18px 20px;background:#eaeFE7;border:1px solid #d8e1d5;border-left:3px solid #557560;color:#30463a;font-size:13px;line-height:1.7}
+.booking-availability-note p{margin:0}
+.booking-availability-note .booking-room-availability{padding-top:8px;color:#5f6b60;font-size:12px}
+.booking-success{width:100%;max-width:760px;margin-top:22px;padding:clamp(22px,4vw,42px);background:#f8f7f3;border:1px solid #e2e4da;box-shadow:0 22px 60px #142b2412;color:#293a31;animation:booking-card-in .35s ease-out both}
+.booking-success-heading{display:grid;grid-template-columns:48px 1fr;gap:17px;align-items:start}
+.booking-success-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:50%;background:#e4ede3;color:#286149}
+.booking-success-heading .eyebrow{color:#647664}
+.booking-success-heading h2{margin:7px 0 9px;color:#193d32;font:400 clamp(27px,4vw,38px)/1.17 var(--serif,"Playfair Display",Georgia,serif)}
+.booking-success-heading p{margin:0;color:#667068;font-size:14px;line-height:1.7}
+.booking-reference-box{margin:27px 0 15px;padding:17px 19px;background:#fff;border:1px solid #e1e2d9}
+.booking-reference-box>span{display:block;color:#777c71;font-size:9px;font-weight:600;letter-spacing:.16em}
+.booking-reference-box>div{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-top:10px}
+.booking-reference-box code{color:#193d32;font:600 clamp(17px,3vw,23px)/1.3 "DM Sans","Source Sans 3",sans-serif;letter-spacing:.045em;overflow-wrap:anywhere}
+.booking-copy-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 12px;border:1px solid #d6dcd2;background:#f7f8f4;color:#29483a;font:500 11px "DM Sans","Source Sans 3",sans-serif;cursor:pointer}
+.booking-copy-button:hover{background:#eaeFE7}
+.booking-reference-box small{display:block;margin-top:7px;color:#58705f;font-size:11px}
+.booking-request-status{display:inline-flex;margin:0;padding:8px 11px;background:#eaeFE7;border:1px solid #dbe4d8;color:#2b5c42;font-size:9px;font-weight:700;letter-spacing:.12em}
+.booking-delivery-message{margin:15px 0 24px;color:#667068;font-size:12px;line-height:1.65}
+.booking-next-steps{padding-top:20px;border-top:1px solid #e6e5dc}
+.booking-next-steps h3{margin:0 0 12px;color:#193d32;font:400 23px var(--serif,"Playfair Display",Georgia,serif)}
+.booking-next-steps ol{margin:0;padding-left:20px;color:#525f56;font-size:12px;line-height:1.8}
+.booking-next-steps li{padding:3px 0 3px 4px}
+.booking-important-notice{margin:21px 0 0;padding:14px 16px;background:#f1eee4;border-left:3px solid #98845f;color:#4b5148;font-size:12px;line-height:1.7}
+.booking-closing{margin:20px 0 0;color:#193d32;font:italic 18px/1.5 var(--serif,"Playfair Display",Georgia,serif)}
+.home-booking-result-info{align-items:flex-start}
+.home-booking-result-info>div{min-width:0}
+.home-booking-result-info b{display:block;margin-bottom:4px;color:#193d32;font-size:11px}
+.home-booking-result-info p{margin:0}
+.home-booking-result-info ul{margin:7px 0 0;padding-left:17px}
+.home-booking-result-info li{padding:2px 0}
+@keyframes booking-card-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:700px){
+  .booking-request-form{padding:19px}
+  .booking-dates-row{grid-template-columns:1fr 1fr}
+  .booking-dates-row .field:last-child{grid-column:1/-1}
+  .booking-success{padding:22px 18px}
+  .booking-success-heading{grid-template-columns:38px 1fr;gap:12px}
+  .booking-success-icon{width:38px;height:38px}
+  .booking-success-icon svg{width:21px;height:21px}
+  .booking-success-heading h2{font-size:29px}
+  .booking-success-heading p{font-size:13px}
+  .booking-reference-box{padding:15px 13px}
+  .booking-reference-box>div{align-items:flex-start;flex-direction:column}
+  .booking-copy-button{min-height:40px}
+  .booking-delivery-message,.booking-next-steps ol,.booking-important-notice{font-size:12px}
+  .home-booking-result-info{flex-direction:column;align-items:stretch}
+  .home-booking-result-info button{align-self:flex-start;white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){.booking-success{animation:none}}

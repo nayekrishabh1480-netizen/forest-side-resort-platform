@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Leaf, Menu, MessageCircle, Mountain, Utensils, X } from 'lucide-react';
-import { api, API_URL, safeExternalUrl } from './api';
+import { ArrowRight, ArrowUpRight, CheckCircle2, Copy, Leaf, Menu, MessageCircle, Mountain, Utensils, X } from 'lucide-react';
+import { ApiError, api, API_URL, safeExternalUrl } from './api';
 import HomePage from './HomePage';
 import LocalImage from './components/LocalImage';
 import { buildWhatsAppUrl, generalWhatsAppMessage, isWhatsAppConfigured } from './utils/whatsapp';
+import { nextDate, notificationDeliveryMessage, submitBookingForm, type BookingRequestResult } from './utils/booking';
 
 type Row = Record<string, any>;
 const publicLinks = [['The stay','/about'],['Rooms','/rooms'],['Weather','/weather'],['Rates','/pricing'],['Explore','/attractions'],['Dining','/hospitality'],['Gallery','/gallery'],['Contact','/contact']];
@@ -38,22 +39,124 @@ function TariffTable(){const [date,setDate]=useState('');const [rates,setRates]=
 
 function BookingForm(){
   const query=new URLSearchParams(window.location.search);
-  const [status,setStatus]=useState(''); const [reference,setReference]=useState(''); const [error,setError]=useState(''); const [delivery,setDelivery]=useState('');
-  const [busy,setBusy]=useState(false); const [availability,setAvailability]=useState<Row|null>(null);
-  const rooms=useResource<Row[]>('/rooms'); const formRef=useRef<HTMLFormElement>(null);
+  const initialCheckIn=query.get('checkIn')||'';
+  const [status,setStatus]=useState('');
+  const [reference,setReference]=useState('');
+  const [error,setError]=useState('');
+  const [delivery,setDelivery]=useState('');
+  const [copyMessage,setCopyMessage]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [checkingAvailability,setCheckingAvailability]=useState(false);
+  const [availability,setAvailability]=useState<Row|null>(null);
+  const [availabilityError,setAvailabilityError]=useState('');
+  const [checkInDate,setCheckInDate]=useState(initialCheckIn);
+  const [checkOutDate,setCheckOutDate]=useState(query.get('checkOut')||'');
+  const rooms=useResource<Row[]>('/rooms');
+  const formRef=useRef<HTMLFormElement>(null);
+  const submittingRef=useRef(false);
   const dateMin=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
-  async function checkAvailability(){const form=formRef.current;if(!form)return;const d=new FormData(form);setError('');setAvailability(null);try{setAvailability(await api<Row>('/availability',{method:'POST',body:JSON.stringify({checkIn:d.get('checkIn'),checkOut:d.get('checkOut'),guests:Number(d.get('guests')),roomTypeId:d.get('roomTypeId')||undefined})}));}catch(x){setError((x as Error).message);}}
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError('');setReference('');setStatus('');setDelivery('');const d=new FormData(e.currentTarget);try{const result=await api<Row>('/booking-requests',{method:'POST',body:JSON.stringify({name:d.get('name'),phone:d.get('phone'),email:d.get('email')||'',checkIn:d.get('checkIn'),checkOut:d.get('checkOut'),guests:Number(d.get('guests')),roomTypeId:d.get('roomTypeId')||undefined,specialRequests:d.get('specialRequests')||'',whatsappOptIn:d.get('whatsappOptIn')==='on'})});setReference(result.reference);setStatus(result.status);setDelivery([`Owner notification: ${result.ownerNotification?.sent?'sent':'not sent'}`,result.emailNotification?`Guest email: ${result.emailNotification.sent?'sent':'not sent'}`:null,result.whatsappNotification?`Guest WhatsApp: ${result.whatsappNotification.sent?'sent':'not sent'}`:null].filter(Boolean).join(' Â· '));e.currentTarget.reset();}catch(x){setError((x as Error).message);}finally{setBusy(false);}}
+  const checkOutMin=checkInDate?nextDate(checkInDate):dateMin;
+
+  async function checkAvailability(){
+    if(submittingRef.current||checkingAvailability)return;
+    const form=formRef.current;
+    if(!form||!form.reportValidity())return;
+    const data=new FormData(form);
+    setAvailability(null);
+    setAvailabilityError('');
+    setCheckingAvailability(true);
+    try{
+      setAvailability(await api<Row>('/availability',{method:'POST',body:JSON.stringify({checkIn:data.get('checkIn'),checkOut:data.get('checkOut'),guests:Number(data.get('guests')),roomTypeId:data.get('roomTypeId')||undefined})}));
+    }catch{
+      setAvailabilityError('We could not check those dates right now. You can still send a booking request for the resort to review.');
+    }finally{
+      setCheckingAvailability(false);
+    }
+  }
+
+  async function submit(e:FormEvent<HTMLFormElement>){
+    e.preventDefault();
+    if(submittingRef.current)return;
+    const form=formRef.current;
+    if(!form||!form.reportValidity())return;
+    submittingRef.current=true;
+    setBusy(true);
+    setError('');
+    setReference('');
+    setStatus('');
+    setDelivery('');
+    setCopyMessage('');
+    const data=new FormData(form);
+    try{
+      const result=await submitBookingForm(data,payload=>api<BookingRequestResult>('/booking-requests',{method:'POST',body:JSON.stringify(payload)}),()=>formRef.current?.reset());
+      setReference(result.reference);
+      setStatus(result.status);
+      setDelivery(notificationDeliveryMessage(result));
+      setError('');
+      setAvailability(null);
+      setCheckInDate('');
+      setCheckOutDate('');
+    }catch(x){
+      const safeMessages:Record<string,string>={
+        NETWORK_ERROR:'The resort service could not be reached. Your details are still here; please try again shortly.',
+        INVALID_STAY_DATES:'Check-out must be after check-in. Choose valid future dates and try again.',
+        VALIDATION_ERROR:'Please review the dates, guest count and contact details, then try again.',
+        INVALID_ROOM_TYPE:'That room preference is no longer available. Choose another option or select no preference.',
+        GUEST_COUNT_EXCEEDS_CAPACITY:'That room category cannot accommodate this guest count. Choose another category or select no preference.',
+        ROOM_DATE_CONFLICT:'We could not accept that room request for those dates. Please change the dates or contact the resort.',
+      };
+      setError(x instanceof ApiError?safeMessages[x.code]||'We could not submit your request. Your details are still here; please try again or contact the resort.':'We could not submit your request. Your details are still here; please try again or contact the resort.');
+    }finally{
+      submittingRef.current=false;
+      setBusy(false);
+    }
+  }
+
+  async function copyReference(){
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(reference);
+      setCopyMessage('Copied');
+    }catch{
+      setCopyMessage('Select the reference to copy');
+    }
+  }
+
+  const availabilityMessage=availability?.availabilityKnown===false
+    ?'The resort is confirming room availability manually. Continue with a request and the team will check your dates. This check does not reserve a room.'
+    :availability?.availabilityKnown===true
+      ?availability.status==='INFORMATIONAL_ONLY'
+        ?'Availability information is shown for your dates. The resort must confirm your request before a reservation is made.'
+        :'No suitable room inventory is currently listed for these dates. Contact the resort to discuss options; this check does not reserve a room.'
+      :'';
+
   return <section className="form-section section-pad"><div className="form-intro"><Eyebrow>YOUR JOURNEY STARTS HERE</Eyebrow><h2>Tell us about your stay.</h2><p>Availability results are informational. A reservation is only confirmed by the resort after review.</p></div><div>
-    <form ref={formRef} className="request-form" onSubmit={submit}>
-      <div className="form-row"><Field label="Check-in" name="checkIn" type="date" required min={dateMin} defaultValue={query.get('checkIn')||''}/><Field label="Check-out" name="checkOut" type="date" required min={dateMin} defaultValue={query.get('checkOut')||''}/><Field label="Guests" name="guests" type="number" required min="1" max="20" defaultValue={query.get('guests')||'2'}/></div>
-      <label className="field">Room preference<select name="roomTypeId" defaultValue={query.get('roomTypeId')||''}><option value="">No preference</option>{rooms.data?.map(r=><option key={r.id} value={r.id}>{r.name} Â· up to {r.maxOccupancy}</option>)}</select></label>
-      <div className="form-row"><Field label="Your name" name="name" required autoComplete="name"/><Field label="Phone number" name="phone" type="tel" required autoComplete="tel"/></div><Field label="Email address" name="email" type="email" autoComplete="email"/><Field label="Special requests" name="specialRequests" as="textarea"/>
+    <form ref={formRef} className="request-form booking-request-form" onSubmit={submit}>
+      <div className="form-row booking-dates-row">
+        <Field label="Check-in" name="checkIn" type="date" required min={dateMin} value={checkInDate} onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setCheckInDate(event.target.value)}/>
+        <Field label="Check-out" name="checkOut" type="date" required min={checkOutMin} value={checkOutDate} onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setCheckOutDate(event.target.value)}/>
+        <Field label="Guests" name="guests" type="number" required min="1" max="20" step="1" defaultValue={query.get('guests')||'2'}/>
+      </div>
+      <label className="field">Room preference<select name="roomTypeId" defaultValue={query.get('roomTypeId')||''} disabled={rooms.loading}><option value="">No preference</option>{rooms.data?.map(r=><option key={r.id} value={r.id}>{r.name} · up to {r.maxOccupancy}</option>)}</select></label>
+      <div className="form-row"><Field label="Your name" name="name" required autoComplete="name" minLength={2} maxLength={180}/><Field label="Phone number" name="phone" type="tel" required autoComplete="tel" minLength={7} maxLength={40} pattern="\+?[0-9\s().-]{7,40}" title="Use 7–40 characters containing a phone number, spaces or common phone punctuation."/></div>
+      <Field label="Email address" name="email" type="email" autoComplete="email" maxLength={320}/>
+      <Field label="Special requests" name="specialRequests" as="textarea" maxLength={2000}/>
       <label className="check-field"><input name="whatsappOptIn" type="checkbox"/><span>I consent to receive booking and travel updates by WhatsApp. Optional.</span></label>
-      <div className="form-submit"><Button type="submit" disabled={busy}>{busy?'Sending requestâ€¦':'Submit booking request'} <ArrowRight size={16}/></Button><button className="button button-outline" type="button" onClick={checkAvailability}>Check availability</button><WhatsAppLink className="button button-outline" message={()=>{const values=formRef.current?new FormData(formRef.current):null;const checkIn=String(values?.get("checkIn")||"");const checkOut=String(values?.get("checkOut")||"");const guests=String(values?.get("guests")||"");return `Hello, I would like to enquire about a stay${checkIn&&checkOut?` from ${checkIn} to ${checkOut}`:""}${guests?` for ${guests} guests`:""} at Forest Side Resort, Guptkashi.`;}}>Enquire on WhatsApp</WhatsAppLink></div>
+      <div className="form-submit"><Button type="submit" disabled={busy||checkingAvailability}>{busy?'Sending request…':'Submit booking request'} <ArrowRight size={16}/></Button><button className="button button-outline" type="button" onClick={checkAvailability} disabled={busy||checkingAvailability}>{checkingAvailability?'Checking dates…':'Check availability'}</button><WhatsAppLink className="button button-outline" message={()=>{const values=formRef.current?new FormData(formRef.current):null;const checkIn=String(values?.get('checkIn')||'');const checkOut=String(values?.get('checkOut')||'');const guests=String(values?.get('guests')||'');return `Hello, I would like to enquire about a stay${checkIn&&checkOut?` from ${checkIn} to ${checkOut}`:''}${guests?` for ${guests} guests`:''} at Forest Side Resort, Guptkashi.`;}}>Enquire on WhatsApp</WhatsAppLink></div>
       <p className="muted-note">Availability information is not a reservation. The resort confirms each booking request.</p>
     </form>
-    {error&&<ErrorState message={error}/ >}{availability&&<div className="admin-note" role="status"><span>{availability.message}</span>{availability.roomTypes?.map((r:Row)=><p key={r.roomTypeId}>{r.roomType}: {r.availableCount} room(s) shown available</p>)}</div>}{reference&&<div className="admin-panel" role="status"><Eyebrow>REQUEST RECEIVED Â· {status}</Eyebrow><h3>Your reference is {reference}</h3><p>This is a request only. The resort will review availability and contact you before any reservation is confirmed.</p><p className="muted-note">{delivery}. If a delivery option was unavailable, the resort may contact you using the phone number provided.</p></div>}
+    {error&&<ErrorState message={error}/>}
+    {availabilityError&&<ErrorState message={availabilityError}/>}
+    {availability&&<div className="booking-availability-note" role="status"><p>{availabilityMessage}</p>{availability.roomTypes?.map((room:Row)=><p className="booking-room-availability" key={room.roomTypeId}>{room.roomType}: {room.availableCount} room{room.availableCount===1?'':'s'} shown available</p>)}</div>}
+    {reference&&<section className="booking-success" role="status" aria-labelledby="booking-success-title">
+      <header className="booking-success-heading"><span className="booking-success-icon" aria-hidden="true"><CheckCircle2 size={25}/></span><div><Eyebrow>REQUEST RECEIVED</Eyebrow><h2 id="booking-success-title">Your request has been received!</h2><p>Thank you for choosing Forest Side Resort. We’re glad you’re planning a stay in the mountains.</p></div></header>
+      <div className="booking-reference-box"><span>BOOKING REFERENCE</span><div><code>{reference}</code><button type="button" className="booking-copy-button" onClick={copyReference} aria-label="Copy booking reference"><Copy size={15}/><span>Copy reference</span></button></div>{copyMessage&&<small role="status">{copyMessage}</small>}</div>
+      <p className="booking-request-status">{status==='REQUESTED'?'REQUESTED · AWAITING REVIEW':'AWAITING RESORT REVIEW'}</p>
+      <p className="booking-delivery-message">{delivery}</p>
+      <div className="booking-next-steps"><h3>What happens next?</h3><ol><li>The resort team reviews your requested dates and room preference.</li><li>The resort contacts you about availability and tariff.</li><li>Your reservation is confirmed only after the resort accepts your request.</li></ol></div>
+      <p className="booking-important-notice">This is a booking request, not a confirmed reservation. Your stay is confirmed only after the resort reviews and accepts your request.</p>
+      <p className="booking-closing">We look forward to welcoming you to the mountains.</p>
+    </section>}
   </div></section>;
 }
 function Field({label,name,type='text',required=false,as='input',...props}:{label:string;name:string;type?:string;required?:boolean;as?:'input'|'textarea';[key:string]:any}){const id=`field-${name}`;return <div className="field"><label htmlFor={id}>{label}{required&&' *'}</label>{as==='textarea'?<textarea id={id} name={name} rows={4} required={required} {...props}/>:<input id={id} name={name} type={type} required={required} {...props}/>}</div>;}
