@@ -162,6 +162,21 @@ export function publicRouter({ prisma, weather, notifications, sensitiveLimiter 
     res.json({ data, advisories: [{ name: 'India Meteorological Department', url: 'https://mausam.imd.gov.in/' }, { name: 'Rudraprayag district administration', url: 'https://rudraprayag.gov.in/' }], safetyNote: 'Forecasts are not guarantees. This service does not predict landslides, road closures or emergencies.' });
   }));
 
+  router.get('/weather/current', asyncRoute(async (_req, res) => {
+    const weatherData = await weather.get();
+    res.json({ data: { available: weatherData.available, location: weatherData.location, source: weatherData.source, current: weatherData.current, lastUpdated: weatherData.lastUpdated, observedAt: weatherData.observedAt, stale: weatherData.stale, providerStatus: weatherData.providerStatus } });
+  }));
+
+  router.get('/weather/forecast', asyncRoute(async (_req, res) => {
+    const weatherData = await weather.get();
+    res.json({ data: { available: weatherData.available, location: weatherData.location, source: weatherData.source, forecast: weatherData.forecast, hourly: weatherData.hourly, lastUpdated: weatherData.lastUpdated, stale: weatherData.stale, providerStatus: weatherData.providerStatus } });
+  }));
+
+  router.get('/weather/summary', asyncRoute(async (_req, res) => {
+    const weatherData = await weather.get();
+    res.json({ data: weatherData, safetyNote: 'Forecasts are not guarantees. This service does not predict landslides, road closures or emergencies.' });
+  }));
+
   router.get('/attractions', asyncRoute(async (_req, res) => {
     const data = await prisma.attraction.findMany({ where: { isPublished: true }, orderBy: { name: 'asc' } });
     res.json({ data });

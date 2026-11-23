@@ -26,6 +26,8 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: SESSION_TTL_HOURS
         value: "12"
+      - key: WEATHER_API_KEY
+        sync: false
       - key: WEATHER_LOCATION_NAME
         value: Guptkashi
       - key: WEATHER_CACHE_TTL_SECONDS
@@ -45,6 +47,8 @@ services:
           name: forest-side-resort-nayek-staging-api
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_CONTACT_NO
+        sync: false
     routes:
       - type: rewrite
         source: /*

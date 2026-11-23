@@ -16,6 +16,9 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`, except
 | POST | `/booking-requests` | Creates a `REQUESTED` booking request |
 | POST | `/enquiries` | Guest enquiry |
 | GET | `/weather` | Current weather/cache and forecast |
+| GET | `/weather/current` | Cached current conditions and provider timestamps |
+| GET | `/weather/forecast` | Cached three-day daily and three-hourly forecast |
+| GET | `/weather/summary` | Full frontend-friendly weather summary |
 | GET | `/attractions` | Published local attractions |
 | GET | `/cafes` | Published cafes and restaurants |
 | GET | `/meals` | Available meal options |

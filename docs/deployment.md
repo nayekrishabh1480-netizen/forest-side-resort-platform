@@ -51,14 +51,16 @@ Set these in Render's service environment settings. Do not commit their values.
 | `NODE_ENV` | Yes | Set to `production` |
 | `APP_ORIGINS` | Yes | Exact frontend origin(s), comma-separated, such as `https://www.example.com`; no path or trailing slash |
 | `SESSION_TTL_HOURS` | Recommended | Session lifetime; defaults to 12 |
-| `WEATHER_LOCATION_NAME` | Recommended | Defaults to Guptkashi |
+| `WEATHER_API_KEY` | Recommended | OpenWeather key; required for live current conditions and forecast |
+| `WEATHER_LOCATION_NAME` | Recommended | Defaults to Guptkashi; resolved with OpenWeather geocoding |
+| `WEATHER_LATITUDE`, `WEATHER_LONGITUDE` | Optional | Set together only when the owner supplies approved resort coordinates; otherwise the API geocodes the location name |
 | `WEATHER_CACHE_TTL_SECONDS` | Recommended | Defaults to 900 |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`, `OWNER_NOTIFICATION_EMAIL` | Optional | Email notifications; configure only after SMTP is approved and available |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_API_VERSION`, `WHATSAPP_TEMPLATE_BOOKING_ACK`, `WHATSAPP_TEMPLATE_BOOKING_STATUS`, `WHATSAPP_TEMPLATE_PREARRIVAL` | Optional | WhatsApp Business Cloud API; use approved templates and guest opt-in |
 
-For the frontend, `VITE_API_BASE_URL` is public build-time configuration and accepts the API origin or a full base URL. The frontend adds `/api/v1` when it is missing. Do not place secrets in any `VITE_` variable.
+For the frontend, `VITE_API_BASE_URL` is public build-time configuration and accepts the API origin or a full base URL. The frontend adds `/api/v1` when it is missing. Set `VITE_CONTACT_NO` on the Render Static Site to the resort's 10-digit Indian WhatsApp number. It is public by design; it is compiled into the website and needs a rebuild after changes. Never place secrets in any `VITE_` variable.
 
-This codebase does **not** use `FRONTEND_URL`, `SESSION_SECRET`, or `WEATHER_API_KEY`: CORS uses `APP_ORIGINS`; admin sessions use random tokens stored hashed in PostgreSQL; the Open-Meteo weather provider does not require an API key. Avoid setting unused variables as if they enabled functionality.
+This codebase does **not** use `FRONTEND_URL` or `SESSION_SECRET`: CORS uses `APP_ORIGINS`; administrator sessions use random tokens stored hashed in PostgreSQL.
 
 Create the first administrator through the documented `npm run admin:create` script using a one-time secure environment session. Do not put `ADMIN_PASSWORD` into the static site, source control, or a permanent shared environment group; remove the bootstrap value after creating the account.
 

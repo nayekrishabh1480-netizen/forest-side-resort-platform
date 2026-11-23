@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { createApp } from '../src/app.js';
 import { ApiError } from '../src/errors.js';
 import { assertRoomAvailable, validateStayDates } from '../src/services/bookings.js';
-import { createWeatherService } from '../src/services/weather.js';
+import { createWeatherService, fetchWeatherJson } from '../src/services/weather.js';
 import { propertyDateToday } from '../src/time.js';
 import { parseWorkbook } from '../src/routes/imports.js';
 
@@ -153,15 +153,43 @@ describe('Forest Side API', () => {
 
   it('returns a clear weather fallback if the provider is unavailable', async () => {
     const prisma = mockPrisma() as never;
-    const service = createWeatherService(prisma, vi.fn().mockRejectedValue(new Error('synthetic network failure')) as typeof fetch);
-    await expect(service.get()).resolves.toMatchObject({ available: false, source: null, current: null, forecast: [] });
+    const service = createWeatherService(prisma, vi.fn().mockRejectedValue(new Error('synthetic network failure')) as typeof fetch, { apiKey: 'synthetic-key', locationName: 'Guptkashi', latitude: undefined, longitude: undefined, cacheTtlSeconds: 900 });
+    await expect(service.get()).resolves.toMatchObject({ available: false, source: null, current: null, forecast: [], providerStatus: 'unavailable' });
+  });
+
+  it('retries a temporary weather provider failure once', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response('temporarily unavailable', { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    await expect(fetchWeatherJson('https://weather.example.test/current', fetcher as typeof fetch)).resolves.toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it('uses cached weather when refreshing from the provider fails', async () => {
     const prisma = mockPrisma();
-    prisma.weatherRecord.findFirst.mockResolvedValue({ source: 'Open-Meteo', temperatureC: 4, relativeHumidityPct: 55, precipitationMm: 0, rainProbabilityPct: null, conditionCode: 2, forecast: [], fetchedAt: new Date('2026-11-22T00:00:00Z'), expiresAt: new Date('2026-11-22T00:15:00Z') });
-    const service = createWeatherService(prisma as never, vi.fn().mockRejectedValue(new Error('synthetic network failure')) as typeof fetch);
-    await expect(service.get()).resolves.toMatchObject({ available: true, stale: true, source: 'Open-Meteo' });
+    prisma.weatherRecord.findFirst.mockResolvedValue({ source: 'OpenWeatherMap', temperatureC: 4, relativeHumidityPct: 55, precipitationMm: 0, rainProbabilityPct: 20, conditionCode: null, forecast: { current: { temperatureC: 4, condition: 'clear sky' }, days: [], hourly: [], observedAt: null }, fetchedAt: new Date('2026-11-22T00:00:00Z'), expiresAt: new Date('2026-11-22T00:15:00Z') });
+    const service = createWeatherService(prisma as never, vi.fn().mockRejectedValue(new Error('synthetic network failure')) as typeof fetch, { apiKey: 'synthetic-key', locationName: 'Guptkashi', latitude: undefined, longitude: undefined, cacheTtlSeconds: 900 });
+    await expect(service.get()).resolves.toMatchObject({ available: true, stale: true, source: 'OpenWeatherMap', current: { temperatureC: 4 } });
+  });
+
+  it('geocodes Guptkashi then returns current conditions and three-day forecast from OpenWeather', async () => {
+    const prisma = mockPrisma();
+    prisma.weatherRecord.create.mockImplementation(async ({ data }: any) => data);
+    const now = Math.floor(Date.now() / 1000);
+    const entry = (offset: number, temp: number) => ({ dt: now + offset, main: { temp, temp_min: temp - 1, temp_max: temp + 1, feels_like: temp - 1, humidity: 61, pressure: 1008 }, weather: [{ id: 800, description: 'clear sky', icon: '01d' }], wind: { speed: 2, deg: 130 }, clouds: { all: 8 }, pop: 0.25, rain: { '3h': 0 } });
+    const replies = [
+      [{ lat: 30.5, lon: 79.1, name: 'Guptkashi' }],
+      { dt: now, name: 'Guptkashi', main: { temp: 9, feels_like: 8, humidity: 60, pressure: 1009 }, weather: [{ id: 800, description: 'clear sky', icon: '01d' }], wind: { speed: 2.4, deg: 140, gust: 3 }, clouds: { all: 10 }, visibility: 10000, sys: { sunrise: now - 3000, sunset: now + 20000 } },
+      { city: { name: 'Guptkashi', timezone: 19800 }, list: [entry(3600, 10), entry(14400, 8), entry(86400, 11), entry(172800, 12), entry(259200, 10)] },
+    ];
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(replies.shift()), { status: 200, headers: { 'content-type': 'application/json' } }));
+    const service = createWeatherService(prisma as never, fetcher as typeof fetch, { apiKey: 'synthetic-key', locationName: 'Guptkashi', latitude: undefined, longitude: undefined, cacheTtlSeconds: 900 });
+    const result = await service.get();
+    expect(result).toMatchObject({ available: true, location: 'Guptkashi', source: 'OpenWeatherMap', current: { temperatureC: 9, feelsLikeC: 8, humidityPct: 60 }, providerStatus: 'ready' });
+    expect(result.forecast).toHaveLength(3);
+    expect(result.hourly[0]).toMatchObject({ temperatureC: 10, rainProbabilityPct: 25, windKph: 7 });
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(prisma.weatherRecord.create).toHaveBeenCalledOnce();
   });
 
   it('parses the real traveller-register column layout and flags duplicate rows', async () => {

@@ -4,3 +4,53 @@
 @media(max-width:1100px){.site-header{padding:0 4%}.public-nav{gap:11px}.public-nav>a:not(.nav-book){font-size:9px}.nav-book{padding:11px;font-size:10px;gap:5px}.section-pad{padding-left:7%;padding-right:7%}.intro{grid-template-columns:.7fr 1.2fr 1fr;gap:3%}.weather-band{padding-left:7%;padding-right:7%;grid-template-columns:42px 1fr 1fr}.weather-band .button{grid-column:2;justify-self:start}.hero-copy{left:9%}}
 @media(max-width:760px){.site-header{height:70px;padding:0 20px}.brand{font-size:11px}.brand-mark{width:32px;height:32px}.menu-toggle{display:block;color:var(--green)}.public-nav{display:none;position:absolute;left:0;right:0;top:70px;background:var(--cream);padding:12px 21px 20px;border-bottom:1px solid #e1ddd3;box-shadow:0 12px 20px #182d2412;align-items:stretch;gap:0;flex-direction:column}.public-nav.is-open{display:flex}.public-nav>a:not(.nav-book){padding:13px 0;border-bottom:1px solid #e6e1d6;font-size:12px}.nav-book{justify-content:space-between;margin-top:12px}.hero{height:calc(88svh - 70px);min-height:570px;max-height:720px}.hero-shade{background:linear-gradient(90deg,#102f25b8,transparent 110%),linear-gradient(0deg,#102f2573,transparent 55%)}.hero-copy{left:25px;right:22px;top:43%;transform:translateY(-40%)}.hero .eyebrow{font-size:8px;letter-spacing:.16em}.hero h1{font-size:clamp(48px,13vw,72px);margin:20px 0 14px}.hero-copy>p{font-size:12px;max-width:280px}.hero-actions{flex-direction:column;align-items:stretch;max-width:290px;gap:8px}.hero-actions .button{justify-content:space-between}.hero-index{left:22px;right:22px;bottom:20px;font-size:7px}.weather-chip{bottom:73px;left:24px;right:auto;min-width:0;padding:10px 12px}.weather-icon{width:32px;height:32px}.weather-chip b{font-size:10px}.weather-chip small{font-size:8px}.scroll-cue{display:none}.section-pad{padding:69px 23px}.intro{grid-template-columns:1fr;gap:25px}.intro-number{order:0}.intro-content{order:1}.intro-text{order:2;margin:0;max-width:400px}.intro-content h2,.section-heading h2{font-size:40px}.stay-section{grid-template-columns:1fr;gap:47px;padding-top:65px;padding-bottom:68px}.stay-image{height:330px}.image-stamp{right:-8px;bottom:19px;padding:12px}.stay-copy h2{font-size:36px}.rooms-preview .section-heading{margin-bottom:30px}.room-grid{grid-template-columns:1fr;gap:14px}.room-image{height:220px}.room-card-body{padding:19px}.weather-band{padding:45px 24px;grid-template-columns:40px 1fr;gap:17px}.weather-band h2{font-size:32px}.weather-band>p{grid-column:2;margin:0}.weather-band .button{grid-column:2}.explore-top{align-items:start;flex-direction:column;gap:22px}.explore-top .section-heading h2{font-size:39px}.explore-grid{grid-template-columns:1fr}.explore-card-large{height:320px}.explore-note{padding:29px 25px}.reviews-section{padding-top:65px;padding-bottom:74px}.reviews-section h2{font-size:34px}.location-section{grid-template-columns:1fr}.location-copy{padding:51px 25px}.location-copy h2{font-size:42px}.map-placeholder{min-height:310px}.footer{padding:37px 24px 18px}.footer-top{grid-template-columns:1fr;gap:19px;padding-bottom:26px;align-items:start}.footer-top>p{font-size:16px;margin:0}.light-link{justify-self:start}.footer-bottom{gap:9px;flex-direction:column;line-height:1.5}.interior-hero{padding:54px 24px 43px;grid-template-columns:1fr;gap:28px;min-height:0}.interior-copy h1{font-size:52px;margin:17px 0}.interior-copy>p{font-size:12px}.chapter-number{margin-top:25px}.interior-photo{height:280px;min-height:280px}.interior-detail{grid-template-columns:1fr;gap:30px}.interior-details-heading h2{font-size:40px}.detail-item{grid-template-columns:25px 30px 1fr;gap:10px;padding:20px 0}.form-section{grid-template-columns:1fr;gap:27px}.form-intro h2{font-size:34px}.request-form{padding:20px;gap:15px}.form-row,.form-row:has(input[type=date]){grid-template-columns:1fr 1fr}.form-row:has(input[type=date]) .field:last-child{grid-column:1/-1}.form-submit{flex-direction:column;align-items:stretch}.form-submit .button{justify-content:space-between}.form-submit>.button-outline{color:var(--green);border-color:#c6c2b8;justify-content:space-between}.advisory{grid-template-columns:1fr;gap:25px}.advisory h2{font-size:42px}.tariff h2{font-size:30px}.tariff th,.tariff td{padding:13px 10px;font-size:9px}.gallery-grid{grid-template-columns:1fr 1fr;gap:9px}.gallery-tile{height:175px}.gallery-tile-2,.gallery-tile-5{transform:none}.photo-caption{left:8px;bottom:8px;padding:6px;font-size:7px}.attraction-cards{grid-template-columns:1fr}.cta-strip{padding:37px 24px;align-items:flex-start;gap:19px;flex-direction:column}.cta-strip h2{font-size:27px}.admin-shell{display:block}.admin-sidebar{position:fixed;z-index:25;left:0;top:0;width:250px;transform:translateX(-105%);transition:transform .22s;box-shadow:10px 0 40px #1116}.admin-sidebar.sidebar-open{transform:translateX(0)}.admin-menu-toggle{display:block}.admin-top{height:58px;padding:0 17px;justify-content:flex-start;gap:12px}.admin-avatar{margin-left:auto}.admin-content{padding:28px 16px}.admin-title-row h1{font-size:29px}.admin-date{display:none}.stat-grid{grid-template-columns:repeat(2,1fr);gap:8px}.stat-card{padding:14px;min-height:112px}.stat-card strong{font-size:26px}.admin-panel-head{padding:17px}.admin-empty{min-height:220px}.login-layout{grid-template-columns:1fr}.login-aside{min-height:255px;padding:25px 24px}.login-aside h1{font-size:40px;margin:15px 0}.login-aside>div>p{font-size:10px}.login-aside>.text-link{margin-top:18px}.login-main{padding:43px 24px;align-items:start}.login-form-wrap h2{font-size:36px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+/* Phase 6: weather and WhatsApp presentation */
+.nav-whatsapp{display:inline-flex;align-items:center;gap:8px;color:inherit;font-size:11px;white-space:nowrap}
+.room-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:12px}
+.home-weather{grid-template-columns:1fr 1fr}
+.home-weather-top{grid-column:1/-1}
+.home-weather-main img{flex:none;object-fit:contain}
+.home-weather-stats{display:flex;flex-wrap:wrap;gap:12px 24px;font-size:11px;color:#d5dacd}
+.home-weather-stats span{display:grid;gap:4px}
+.home-weather-stats b{color:#f7f2e8}
+.home-weather-note{grid-column:1}
+.weather-page{display:grid;gap:36px}
+.weather-current-card{padding:clamp(22px,4vw,42px);background:#244236;color:#f7f3e9;border-radius:3px}
+.weather-current-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.weather-current-heading h2,.weather-section-heading h2,.weather-rain-section h2{font:400 clamp(28px,4vw,40px)/1.15 "Playfair Display",Georgia,serif;margin:12px 0 7px}
+.weather-current-heading p,.weather-current-card .muted-note{color:#d2d7ce;font-size:12px;line-height:1.7}
+.weather-temperature{font:400 clamp(56px,9vw,84px)/1 "Playfair Display",Georgia,serif;color:#e3d1ad;margin:18px 0 22px}
+.weather-temperature span{display:block;font:12px "DM Sans",sans-serif;color:#e3e2d9;margin-top:10px}
+.weather-current-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.weather-current-stats span{display:grid;gap:8px;padding:14px;border:1px solid #ffffff35;font-size:11px;color:#d2d7ce}
+.weather-current-stats b{color:#fff;font-size:14px}
+.weather-section-heading{margin-bottom:18px}
+.weather-section-heading p,.weather-advisory p{color:#77766d;font-size:12px;line-height:1.8}
+.weather-forecast-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.weather-forecast-card{padding:22px;background:#f1efe8;border:1px solid #e2ded3}
+.weather-forecast-card h3{font:400 20px "Playfair Display",Georgia,serif;color:#294638;text-transform:capitalize}
+.weather-forecast-card p,.weather-forecast-card small{display:block;color:#6f716a;font-size:11px;line-height:1.7}
+.weather-day-temperatures{font-size:18px!important;color:#294638!important}
+.weather-day-temperatures span{color:#888}
+.weather-rain-section{display:grid;grid-template-columns:1fr 1.5fr;align-items:center;gap:24px;padding:25px;background:#f8f7f2}
+.rain-chart{height:150px;display:flex;align-items:end;justify-content:space-around;gap:12px}
+.rain-chart-column{height:100%;display:flex;flex:1;flex-direction:column;align-items:center;justify-content:end;gap:7px;font-size:10px;color:#5f6b61}
+.rain-chart-track{height:100px;width:min(38px,75%);display:flex;align-items:end;background:#e5e8e0;border-radius:20px 20px 0 0;overflow:hidden}
+.rain-chart-track span{width:100%;min-height:2px;background:#718c75;border-radius:20px 20px 0 0}
+.weather-hourly-grid{display:grid;grid-auto-columns:minmax(96px,1fr);grid-auto-flow:column;gap:10px;overflow-x:auto;padding-bottom:8px}
+.weather-hour-card{display:grid;justify-items:center;gap:8px;padding:14px 8px;background:#f2f0e9;color:#46594b;font-size:10px;white-space:nowrap}
+.weather-hour-card b{font-size:14px;color:#253f34}
+.weather-advisory{padding:22px;background:#f1efe8;border-left:3px solid #9d8868}
+.weather-advisory .advisory-links{display:flex;flex-wrap:wrap;gap:14px}
+.weather-advisory .advisory-links a{display:inline-flex;align-items:center;gap:6px;color:#294638;font-size:11px}
+.mobile-whatsapp{display:none}
+@media(max-width:700px){
+  .home-weather{grid-template-columns:1fr}
+  .home-weather-top{grid-column:auto}
+  .home-weather-note{grid-column:auto}
+  .weather-current-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .weather-forecast-grid{grid-template-columns:1fr}
+  .weather-rain-section{grid-template-columns:1fr;gap:12px;padding:18px}
+  .weather-advisory .advisory-links{align-items:flex-start;flex-direction:column}
+  .mobile-whatsapp{display:inline-flex;position:fixed;z-index:30;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));align-items:center;gap:9px;padding:13px 17px;background:#254638;color:#fff;box-shadow:0 8px 26px #172e2555;border-radius:999px;font-size:12px;text-decoration:none}
+}

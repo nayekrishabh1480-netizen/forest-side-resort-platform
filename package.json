@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test:web": "vitest run src/api.test.ts",
+    "test:web": "vitest run src/api.test.ts src/utils/whatsapp.test.ts",
     "preview": "vite preview",
     "dev:api": "npm run dev -w @forest-side/api",
     "build:api": "npm run build -w @forest-side/api",
