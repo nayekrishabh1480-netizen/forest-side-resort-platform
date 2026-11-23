@@ -1,0 +1,417 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  MANAGER
+  STAFF
+}
+enum BookingStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+enum PaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+  REFUNDED
+}
+enum DayType {
+  ANY
+  WEEKDAY
+  WEEKEND
+}
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+}
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+enum ReviewStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+enum ImportStatus {
+  PREVIEWED
+  COMPLETED
+  REVERTED
+  FAILED
+}
+
+model AdminUser {
+  id               String         @id @default(uuid()) @db.Uuid
+  email            String         @unique @db.VarChar(320)
+  passwordHash     String         @db.VarChar(100)
+  role             AdminRole      @default(STAFF)
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+  sessions         AdminSession[]
+  confirmedBookings Booking[]     @relation("BookingConfirmedBy")
+  createdRates     SeasonalRate[] @relation("RateCreatedBy")
+  importBatches    ImportBatch[]
+  @@index([isActive, role])
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  adminUserId String    @db.Uuid
+  tokenHash   String    @unique @db.Char(64)
+  expiresAt   DateTime  @db.Timestamptz(3)
+  revokedAt   DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  @@index([adminUserId, expiresAt])
+  @@index([expiresAt])
+  @@map("admin_sessions")
+}
+
+model Guest {
+  id                   String                @id @default(uuid()) @db.Uuid
+  fullName             String?               @db.VarChar(180)
+  phone                String?               @db.VarChar(40)
+  email                String?               @db.VarChar(320)
+  notes                String?               @db.VarChar(2000)
+  marketingSourceId    String?               @db.Uuid
+  sourceImportBatchId  String?               @db.Uuid
+  createdAt            DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(3)
+  marketingSource      MarketingSource?      @relation(fields: [marketingSourceId], references: [id], onDelete: SetNull)
+  sourceImportBatch    ImportBatch?          @relation("ImportCreatedGuests", fields: [sourceImportBatchId], references: [id], onDelete: SetNull)
+  bookings             Booking[]
+  bookingMemberships   BookingGuest[]
+  enquiries             Enquiry[]
+  preferences           GuestPreference?
+  travellerRegisterRows TravellerRegisterEntry[]
+  @@index([phone])
+  @@index([email])
+  @@index([sourceImportBatchId])
+  @@index([createdAt])
+  @@map("guests")
+}
+
+model RoomType {
+  id             String          @id @default(uuid()) @db.Uuid
+  name           String          @unique @db.VarChar(120)
+  slug           String          @unique @db.VarChar(140)
+  description    String?         @db.VarChar(3000)
+  maxOccupancy   Int             @default(2)
+  amenities      String[]        @default([])
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  rooms          Room[]
+  bookings       Booking[]
+  seasonalRates  SeasonalRate[]
+  historicalRates HistoricalRate[]
+  @@index([isActive, name])
+  @@map("room_types")
+}
+
+model Room {
+  id         String    @id @default(uuid()) @db.Uuid
+  roomNumber String    @unique @db.VarChar(40)
+  roomTypeId String    @db.Uuid
+  isActive   Boolean   @default(true)
+  notes      String?   @db.VarChar(1000)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+  roomType   RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  bookings   Booking[]
+  @@index([roomTypeId, isActive])
+  @@map("rooms")
+}
+
+model Booking {
+  id                   String        @id @default(uuid()) @db.Uuid
+  reference            String        @unique @db.VarChar(24)
+  guestId              String        @db.Uuid
+  roomId               String?       @db.Uuid
+  roomTypeId           String?       @db.Uuid
+  checkIn              DateTime      @db.Date
+  checkOut             DateTime      @db.Date
+  guestCount           Int
+  status               BookingStatus @default(REQUESTED)
+  paymentStatus        PaymentStatus @default(NOT_REQUIRED)
+  totalAmount          Decimal?      @db.Decimal(10, 2)
+  currency             String        @default("INR") @db.Char(3)
+  specialRequests      String?       @db.VarChar(2000)
+  whatsappOptIn        Boolean       @default(false)
+  whatsappOptInAt      DateTime?     @db.Timestamptz(3)
+  source               String?       @db.VarChar(80)
+  confirmedByAdminId   String?       @db.Uuid
+  confirmedAt          DateTime?     @db.Timestamptz(3)
+  cancelledAt          DateTime?     @db.Timestamptz(3)
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
+  guest                Guest         @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  room                 Room?         @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  roomType             RoomType?     @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+  confirmedBy          AdminUser?    @relation("BookingConfirmedBy", fields: [confirmedByAdminId], references: [id], onDelete: SetNull)
+  notificationLogs     NotificationLog[]
+  bookingGuests        BookingGuest[]
+  @@index([checkIn, checkOut, status])
+  @@index([guestId, createdAt])
+  @@index([status, createdAt])
+  @@index([roomId, status, checkIn, checkOut])
+  @@map("bookings")
+}
+
+model BookingGuest {
+  id        String   @id @default(uuid()) @db.Uuid
+  bookingId String   @db.Uuid
+  guestId   String   @db.Uuid
+  role      String   @default("COMPANION") @db.VarChar(24)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  @@unique([bookingId, guestId])
+  @@index([guestId])
+  @@map("booking_guests")
+}
+
+model Enquiry {
+  id              String      @id @default(uuid()) @db.Uuid
+  reference       String      @unique @db.VarChar(24)
+  guestId         String?     @db.Uuid
+  name            String      @db.VarChar(180)
+  phone           String      @db.VarChar(40)
+  email           String?     @db.VarChar(320)
+  message         String      @db.VarChar(4000)
+  checkIn         DateTime?   @db.Date
+  checkOut        DateTime?   @db.Date
+  guestCount      Int?
+  status          String      @default("NEW") @db.VarChar(24)
+  source          String?     @db.VarChar(80)
+  respondedAt     DateTime?   @db.Timestamptz(3)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @db.Timestamptz(3)
+  guest           Guest?      @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  @@index([status, createdAt])
+  @@index([phone])
+  @@map("enquiries")
+}
+
+model SeasonalRate {
+  id           String     @id @default(uuid()) @db.Uuid
+  roomTypeId   String?    @db.Uuid
+  name         String     @db.VarChar(120)
+  season       String     @db.VarChar(80)
+  dayType      DayType    @default(ANY)
+  amount       Decimal    @db.Decimal(10, 2)
+  currency     String     @default("INR") @db.Char(3)
+  validFrom    DateTime   @db.Date
+  validTo      DateTime   @db.Date
+  specialDate  DateTime?  @db.Date
+  extraCharges Json       @default("[]")
+  isPublished  Boolean    @default(false)
+  isActive     Boolean    @default(true)
+  createdById  String?    @db.Uuid
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  roomType     RoomType?  @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+  createdBy    AdminUser? @relation("RateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  @@index([isPublished, isActive, validFrom, validTo])
+  @@index([roomTypeId, season, dayType])
+  @@map("seasonal_rates")
+}
+
+model HistoricalRate {
+  id          String    @id @default(uuid()) @db.Uuid
+  roomTypeId  String?   @db.Uuid
+  name        String    @db.VarChar(120)
+  season      String    @db.VarChar(80)
+  dayType     DayType   @default(ANY)
+  amount      Decimal   @db.Decimal(10, 2)
+  currency    String    @default("INR") @db.Char(3)
+  effectiveFrom DateTime @db.Date
+  effectiveTo DateTime? @db.Date
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  roomType    RoomType? @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+  @@index([isPublished, effectiveFrom, effectiveTo])
+  @@index([roomTypeId, season])
+  @@map("historical_rates")
+}
+
+model GuestPreference {
+  id               String   @id @default(uuid()) @db.Uuid
+  guestId          String   @unique @db.Uuid
+  dietaryPreference String? @db.VarChar(120)
+  allergies        String?  @db.VarChar(1000)
+  specialNeeds     String?  @db.VarChar(2000)
+  arrivalMealTime  String?  @db.VarChar(20)
+  whatsappOptIn    Boolean  @default(false)
+  whatsappOptInAt  DateTime? @db.Timestamptz(3)
+  consentSource    String?  @db.VarChar(80)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+  guest            Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  @@map("guest_preferences")
+}
+
+model MealOption {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(120)
+  description String?  @db.VarChar(1000)
+  price       Decimal? @db.Decimal(10, 2)
+  currency    String   @default("INR") @db.Char(3)
+  isAvailable Boolean  @default(false)
+  isPublished Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  @@index([isPublished, sortOrder])
+  @@map("meal_options")
+}
+
+model Attraction {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(180)
+  description String?  @db.VarChar(2000)
+  distanceKm  Decimal? @db.Decimal(8, 2)
+  address     String?  @db.VarChar(500)
+  mapsUrl     String?  @db.VarChar(1000)
+  photoUrl    String?  @db.VarChar(1000)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  @@index([isPublished, name])
+  @@map("attractions")
+}
+
+model Cafe {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(180)
+  description String?  @db.VarChar(2000)
+  address     String?  @db.VarChar(500)
+  distanceKm  Decimal? @db.Decimal(8, 2)
+  mapsUrl     String?  @db.VarChar(1000)
+  openingHours String? @db.VarChar(500)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  @@index([isPublished, name])
+  @@map("cafes")
+}
+
+model WeatherRecord {
+  id                  String   @id @default(uuid()) @db.Uuid
+  locationName        String   @db.VarChar(180)
+  source               String   @db.VarChar(120)
+  temperatureC         Decimal? @db.Decimal(5, 2)
+  relativeHumidityPct  Int?
+  precipitationMm      Decimal? @db.Decimal(7, 2)
+  rainProbabilityPct   Int?
+  conditionCode        Int?
+  forecast             Json?
+  fetchedAt            DateTime @db.Timestamptz(3)
+  expiresAt            DateTime @db.Timestamptz(3)
+  @@index([locationName, fetchedAt])
+  @@index([expiresAt])
+  @@map("weather_records")
+}
+
+model NotificationLog {
+  id               String              @id @default(uuid()) @db.Uuid
+  channel          NotificationChannel
+  status           NotificationStatus  @default(QUEUED)
+  messageType      String              @db.VarChar(80)
+  recipientMasked String?              @db.VarChar(80)
+  providerMessageId String?             @db.VarChar(180)
+  failureCode      String?              @db.VarChar(80)
+  guestId          String?              @db.Uuid
+  bookingId        String?              @db.Uuid
+  sentAt           DateTime?            @db.Timestamptz(3)
+  createdAt        DateTime             @default(now()) @db.Timestamptz(3)
+  booking          Booking?             @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  @@index([status, createdAt])
+  @@index([channel, messageType, createdAt])
+  @@map("notification_logs")
+}
+
+model Review {
+  id          String       @id @default(uuid()) @db.Uuid
+  guestName   String?      @db.VarChar(120)
+  rating      Int
+  body        String       @db.VarChar(3000)
+  status      ReviewStatus @default(PENDING)
+  stayDate    DateTime?    @db.Date
+  publishedAt DateTime?    @db.Timestamptz(3)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+  @@index([status, publishedAt])
+  @@map("reviews")
+}
+
+model MarketingSource {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  slug      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  guests    Guest[]
+  @@map("marketing_sources")
+}
+
+model WebsiteSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(120)
+  value     Json
+  isPublic  Boolean  @default(false)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@map("website_settings")
+}
+
+model ImportBatch {
+  id             String      @id @default(uuid()) @db.Uuid
+  uploadedById   String      @db.Uuid
+  status         ImportStatus @default(PREVIEWED)
+  rowsRead       Int         @default(0)
+  rowsImported   Int         @default(0)
+  rowsSkipped    Int         @default(0)
+  rowsFailed     Int         @default(0)
+  personalDataIncluded Boolean @default(false)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime?   @db.Timestamptz(3)
+  revertedAt     DateTime?   @db.Timestamptz(3)
+  uploadedBy     AdminUser   @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  entries        TravellerRegisterEntry[]
+  createdGuests  Guest[]     @relation("ImportCreatedGuests")
+  @@index([status, createdAt])
+  @@map("import_batches")
+}
+
+model TravellerRegisterEntry {
+  id                String     @id @default(uuid()) @db.Uuid
+  importBatchId     String     @db.Uuid
+  guestId           String?    @db.Uuid
+  sourceRowNumber   Int
+  travellerCount    Int?
+  travelFrom        String?    @db.VarChar(180)
+  travelTo          String?    @db.VarChar(180)
+  arrivalDate       DateTime?  @db.Date
+  departureDate     DateTime?  @db.Date
+  operationalHash   String     @db.Char(64)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  importBatch       ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  guest             Guest?     @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  @@unique([importBatchId, sourceRowNumber])
+  @@index([operationalHash])
+  @@index([arrivalDate, departureDate])
+  @@map("traveller_register_entries")
+}

@@ -1,0 +1,159 @@
+openapi: 3.1.0
+info:
+  title: Forest Side Resort API
+  version: 1.0.0
+  description: Versioned public hospitality and authenticated resort administration API.
+servers:
+  - url: https://api.example.invalid/api/v1
+    description: Replace with the deployed API origin
+security: []
+paths:
+  /health:
+    get:
+      summary: Database-backed service health
+      responses:
+        '200': { description: API and database are healthy }
+        '503': { description: Database unavailable }
+  /resort:
+    get:
+      summary: Public resort information
+      responses:
+        '200': { description: Published resort settings }
+  /rooms:
+    get:
+      summary: Public room categories
+      responses:
+        '200': { description: Active room categories and amenities }
+  /tariffs:
+    get:
+      summary: Currently published tariffs
+      responses:
+        '200': { description: Owner-configured current tariff records }
+  /price-history:
+    get:
+      summary: Published historical tariffs
+      responses:
+        '200': { description: Historical price records }
+  /price-quote:
+    post:
+      summary: Calculate an indicative stay quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [checkIn, checkOut]
+              properties:
+                checkIn: { type: string, format: date }
+                checkOut: { type: string, format: date }
+                roomTypeId: { type: string, format: uuid }
+      responses:
+        '200': { description: Quote from configured tariffs }
+        '400': { description: Invalid date range }
+  /availability:
+    post:
+      summary: Submit a non-reserving availability enquiry
+      responses:
+        '200': { description: Availability enquiry result }
+        '400': { description: Invalid request }
+  /booking-requests:
+    post:
+      summary: Submit a booking request for owner review
+      description: Creates a REQUESTED booking. It does not confirm or reserve a room.
+      responses:
+        '201': { description: Request reference and review status }
+        '400': { description: Invalid guest or date input }
+  /enquiries:
+    post:
+      summary: Submit a guest enquiry
+      responses:
+        '201': { description: Enquiry reference }
+  /weather:
+    get:
+      summary: Current weather and forecast with cache fallback
+      responses:
+        '200': { description: Weather data, stale cache, or unavailable state }
+  /attractions:
+    get:
+      summary: Published attractions
+      responses:
+        '200': { description: Public attractions }
+  /cafes:
+    get:
+      summary: Published cafes and restaurants
+      responses:
+        '200': { description: Public local listings }
+  /meals:
+    get:
+      summary: Available meal options
+      responses:
+        '200': { description: Published meal options }
+  /meal-preferences:
+    post:
+      summary: Save guest meal and pre-arrival preferences
+      responses:
+        '201': { description: Preference saved }
+  /contact:
+    get:
+      summary: Published contact information
+      responses:
+        '200': { description: Public contact information }
+  /reviews:
+    get:
+      summary: Verified and published reviews
+      responses:
+        '200': { description: Publicly approved reviews }
+  /admin/auth/login:
+    post:
+      summary: Authenticate administrator and set session cookie
+      responses:
+        '200': { description: Session created }
+        '401': { description: Invalid credentials }
+  /admin/auth/logout:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Revoke administrator session
+      responses:
+        '200': { description: Session revoked }
+  /admin/dashboard:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: Database-derived dashboard metrics
+      responses:
+        '200': { description: Actual record counts and computed KPIs }
+        '401': { description: Authentication required }
+  /admin/bookings:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: List bookings for administrators
+      responses:
+        '200': { description: Private booking records }
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Create an administrator booking record
+      responses:
+        '201': { description: Booking created after server validation }
+  /admin/imports/traveller-register/preview:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Validate an XLSX traveller register without exposing personal columns
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                columnMap: { type: string, description: Optional JSON mapping of approved operational fields }
+      responses:
+        '200': { description: Safe preview and validation errors }
+        '400': { description: Invalid workbook or required columns missing }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: fsr_admin_session

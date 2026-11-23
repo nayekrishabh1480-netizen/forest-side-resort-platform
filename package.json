@@ -1,0 +1,45 @@
+{
+  "name": "forest-side-resort-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test:web": "vitest run src/api.test.ts",
+    "preview": "vite preview",
+    "dev:api": "npm run dev -w @forest-side/api",
+    "build:api": "npm run build -w @forest-side/api",
+    "test:api": "npm run test -w @forest-side/api",
+    "prisma:generate": "npm run prisma:generate -w @forest-side/api",
+    "prisma:validate": "npm run prisma:validate -w @forest-side/api",
+    "prisma:migrate": "npm run prisma:migrate -w @forest-side/api",
+    "prisma:deploy": "npm run prisma:deploy -w @forest-side/api",
+    "prisma:seed": "npm run prisma:seed -w @forest-side/api",
+    "admin:create": "npm run admin:create -w @forest-side/api"
+  },
+  "workspaces": [
+    "apps/api"
+  ],
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest",
+    "lucide-react": "latest"
+  },
+  "devDependencies": {
+    "tailwindcss": "latest",
+    "@tailwindcss/vite": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.0": true,
+    "prisma@6.19.0": true,
+    "@prisma/engines@6.19.0": true,
+    "esbuild@0.28.2": true
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.xlsx
+*.xls
+*.csv
+Forest_Side_Resort_DT_Phase2.pdf
+*.tsbuildinfo
